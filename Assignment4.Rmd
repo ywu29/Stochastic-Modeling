@@ -1,0 +1,109 @@
+---
+title: "Assignment4Group6"
+author: "Team6"
+date: "12/8/2021"
+output : pdf_document
+---
+## Question 1
+```{r}
+rm(list=ls())
+Pstar <- 1.5 ; Phi <- -0.4; mean<-0 ; sd<- 0.08 ; nrep <-10000
+set.seed(12)
+Pricesim<-function(nrep,Pstar,mean,sd,Phi){
+  Prices<-vector(mode="numeric",length=nrep)
+  Prices[1]<-Pstar
+  for (i in 2:nrep){
+    Prices[i]<-Pstar*(1-Phi)+Phi*Prices[i-1]+rnorm(1,mean,sd)
+  }
+  return(Prices)
+}
+```
+##Question 2
+For the original series, the plot is moderately stationary. When phi is increased to 0, the plot is also stationary. However, when phi is changed to 1, it is not stationary. The plot varied randomly and it is not varied around the mean regularly. Therefore, we can be more effective in predicting prices when phi is 0 because its plot is more stationary, making the model easier to interpret and therefore make accurate predictions
+```{r echo=FALSE, fig.height=5, fig.width=7}
+#phi=-0.4
+Prices1<-Pricesim(10000,1.5,0,0.08,-0.4)
+prices1_ts<-ts(Prices1[1:50],frequency = 12,start=c(2018,1))
+par(mfrow=c(2,2)) 
+plot(prices1_ts, main="Phi=-0.4")
+abline(h=mean(prices1_ts))
+#phi=0
+Prices2<-Pricesim(10000,1.5,0,0.08,0)
+prices2_ts<-ts(Prices2[1:50],frequency =12,start=c(2018,1))
+plot(prices2_ts, main="Phi=0")
+abline(h=mean(prices2_ts))
+#phi=1
+Prices3<-Pricesim(10000,1.5,0,0.08,1)
+prices3_ts<-ts(Prices3[1:50],frequency = 12,start=c(2018,1))
+plot(prices3_ts, main="Phi=1")
+abline(h=mean(prices3_ts))
+```
+##Question 3
+In ACF, there is one lag over the confidence interval. In PACF, there is 1 lag above confidence interval. Both plots show decaying behavior and correlations altering in sign, showing the necessity of AR(1) process.
+```{r, echo=FALSE, fig.height=5, fig.width=7}
+library(forecast)
+par(mfrow=c(2,2))
+Acf(prices1_ts,lag.max =10, plot=TRUE, ci=0.99)
+Pacf(prices1_ts, lag.max=10, plot=TRUE, ci=0.99)
+```
+##Question 4
+The intercept is 4.263e-15 and slope is 1.000e+00.
+```{r}
+library(dynlm)
+model_ts<-dynlm(Prices1~L(Prices1,-1))
+model_ts
+```
+##Question 5
+```{r}
+avocado<-read.csv("avocado.csv")
+Avocado_Prices<-ts(avocado$Avocado_Prices,frequency=52, start=c(2018,1))
+```
+##Question 6
+The time mean is 1.557413.
+```{r}
+plot(Avocado_Prices, ylab="Avocado Price")      
+abline(h=mean(Avocado_Prices))
+mean(Avocado_Prices)
+```
+##Question 7
+For the ACF plots in question 7, there is decaying behavior because of the downward tendency with each lag and all lag values are over a 99% confidence interval. The main similarity between question 7 and question 3 is that they are both decaying. However, in question 3, the plot is just one lag is over the confidence interval.
+As for the PACF plots, they are similar with only one lag above confidence interval. In Question 3, the one lag value is largely significant above a 99% confidence interval. 
+```{r echo=FALSE, fig.height=5, fig.width=7}
+par(mfrow=c(2,2))
+Acf(Avocado_Prices,lag.max= 10, plot=TRUE,ci=0.99)
+Pacf(Avocado_Prices,lag.max=10, plot=TRUE,ci=0.99)
+```
+##Question 8
+From ARIMA model, AIC is 296.59, Phi is 0.8822, and equilibrium price is 1.5591
+```{r}
+(model<-Arima(Avocado_Prices,c(1,0,0))) 
+```
+## Question 9
+In the ACF plot, there is decaying behavior because of the downward tendency with each lag and all lag values are over 99% confidence interval. 
+In the PACF, the first lag is significant over the confidence interval, showing the necessity of AR(1) process.
+The ACF and PACF plots of question 9 and 7 both reveal the same result in terms of decaying behavior and one significant lag.
+```{r echo=FALSE, fig.height=5, fig.width=7}
+Prices4<-Pricesim(10000,1.5461,0,0.08,0.8822)
+prices4_ts<-ts(Prices4,frequency = 12,start=c(2018,1))
+par(mfrow=c(2,2))
+plot(window(prices4_ts, 2018))
+abline(h=mean(prices4_ts))
+Acf(prices4_ts,lag.max = 10,ci=0.99)
+Pacf(prices4_ts,lag.max = 10,ci=0.99)
+```
+## Question 10
+From the two plots, no patterns like question 7 exist and there are no significant lags. The ACF and PACF plots are similar to those of a white noise process.
+```{r}
+par(mfrow=c(2,2))
+Acf(model$residuals,lag.max=10, plot=TRUE, ci=0.99)
+Pacf(model$residuals,lag.max=10, plot=TRUE, ci=0.99)
+```
+## Question 11
+Our prediction for the next five periods are: 1.515782, 1.520882,1.525381,1.529351,1.532853.
+```{r}
+(forecast<-forecast(model,5))
+```
+## Question 12
+```{r echo=FALSE, fig.height=3, fig.width=7}
+plot(forecast)
+```

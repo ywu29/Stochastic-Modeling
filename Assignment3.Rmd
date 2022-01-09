@@ -1,0 +1,67 @@
+---
+title: "Assignment 3"
+author: "Team 6"
+date: "11/22/2021"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(comment = NA)
+```
+
+
+# Summary  
+This problem addresses a consulting firm called AppShop that must decide what the best route is to compete for a major contract. The three options at hand are to take a payment proposed by the client that is lower than the company's but would not include a bonus, an even lower level payment with a prospective bonus at the end of the case, or bid on a RFP where the benefits are dependent on the clients savings during the project. Our approach was to calculate the present expected value for each possible route, which demonstrated that while the first option presents the highest expected value, the client opposed that path. Therefore, our team recommends that AppShop take the second option, which is taking the lowest payment per month but with a large bonus on the end as a reward for excellent work.  
+
+
+# Analysis  
+Our approach was to calculate the expected present value of the future payment using the present value formula. In all options, Appshop has to pay the cost of \$140000.For Option 1, we looked at the value for each month, and if there was an additional payment at the end of the time frame, we calculated the present value of that as well. For the 2nd option, Appshop faces two situations. It has 0.7 probability of getting a payment of \$125000 every month and a bonus of $1.5m at the end of month 24. It also has a 0.3 probability only receiving payment of \$125000 per month. For the 3rd option, we ran a simulation with 10000 tries to calculate a triangular distribution model in reference to the team's possible bid to the RFP. For each option we used the numbers provided in the case to make appropriate calculations and estimates. 
+
+```{r include=FALSE}
+library(tidyverse)
+library(extraDistr)
+library(FinCal)
+library(glue)
+```
+
+**Option 1, presented by the client**  
+
+```{r}
+pv_opt1<- round(-pv(0.005,24,0,15000,0))
+glue('The expect value of the clients first proposal is {pv_opt1}.')
+```  
+**Option 2, also presented by the client**
+```{r}
+pv_opt2_wbonus<--pv(0.005,24,1500000,-15000,0)
+pv_opt2_nobonus<-pv(0.005,24,0,15000,0)
+pv_opt2<- round(pv_opt2_nobonus*0.3+pv_opt2_wbonus*0.7)
+glue('The expected value of the clients second proposal is {pv_opt2}.')
+```  
+**Option 3, the open RFP**  
+```{r}
+n <- 10000 
+simulation <- rtriang(n, a = 3200000, b = 12800000, c = 5600000)
+for (i in 1:n){
+  if ( simulation[i] < 4000000){
+    simulation[i] <- 0
+ } else if ( simulation[i] < 6000000){
+    simulation[i] <- (simulation[i] - 4000000) * 0.2
+  } else if ( simulation[i] < 8000000){
+    simulation[i] <- 400000 + ((simulation[i] - 6000000) * 0.4)
+  } else {
+    simulation[i] <- 1200000 + ((simulation[i] - 8000000) * 0.6)
+  }
+}
+pv_shareofsaving<--pv(r=0.005,n=24,fv=mean(simulation),pmt=0,type=0)
+pv_revenuebid<--pv(r=0.005,n=24,fv=0,pmt=10000,type=0)
+pv_opt3<-round((pv_shareofsaving+pv_revenuebid)*0.45+0*0.55)
+glue('The expected value of the clients third proposal is {pv_opt3}.')
+```  
+This simulation calculates the 4 possibilities for the winner's share of the client's savings. Using the if/else statement, the simulation runs 10000 times to evaluate how often the consulting firm will make $0, how often they will make over $1.2 million, in addition to the two options in between. Using this triangular distribution model, with a lower limit, upper limit, and mode, we can evaluate how risky the RFP bidding option is for the firm.
+  
+# Illustration  
+![](decision_tree.jpg)  
+
+# Conclusion  
+Our team recommends that AppShop take the second offer made by the client, which is to receive a slightly lower monthly payment but be rewarded with a large bonus at the end. A possible pitfall is that these numbers are based off of some estimates - for example, the team at AppShop concludes that they have a 0.7 probability of receiving the bonus, but this number comes from their guess as to how satisfied their client will be. Therefore, the predictions here are based on guesses as to how the project will go. An obvious risk in choosing this option is not performing well enough to receive the bonus, in which case the consulting team would lose quite a bit of money. Another risk in a business context is having to put in more hours of work than they initially calculated in order to do well enough to receive the bonus, rather than receive a slightly higher monthly pay regardless of the hours of work. However, given that the expected present value for Option 2 is the highest, we believe that this is the correct route for AppShop.
