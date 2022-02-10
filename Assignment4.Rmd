@@ -1,6 +1,5 @@
 ---
-title: "Assignment4Group6"
-author: "Team6"
+title: "Assignment4"
 date: "12/8/2021"
 output : pdf_document
 ---
