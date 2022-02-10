@@ -1,6 +1,5 @@
 ---
-title: "Assignment 3"
-author: "Team 6"
+title: "Assignment3"
 date: "11/22/2021"
 output: word_document
 ---
